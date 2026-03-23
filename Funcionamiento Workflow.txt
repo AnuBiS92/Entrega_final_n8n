@@ -1,0 +1,17 @@
+Funcionamiento Workflow:
+
+El workflow consiste en un analizador de reseñas de clientes. El objetivo es detectar reseñas negativas, resumirlas en una breve oración y 3 razones máximo y enviarle un alerta al equipo de CX avisando que se detectó una nueva reseña negativa para que se pongan en contacto con el usuario.
+
+El primer nodo es un Webhook que recibe el dato de la reseña. Luego el siguiente nodo es un LLM que evalúa si esa reseña es positiva, negativa o neutra.
+
+Nodo set que parsea la info del LLM.
+
+Luego viene un nodo If que redirecciona el workflow según la reseña sea negativa o positiva/neutra.
+
+Si la reseña es negativa, pasa a un nodo LLM que resume esa reseña en una breve oración y extrae tres razones máximo.
+
+Nodo set que parsea la info del LLM 2.
+
+Nodo Gmail que envía la información de la reseña negativa al equipo CX.
+
+En caso de que la reseña sea positiva / neutra, se finaliza con un nodo Gmail enviándole un correo al cliente agradeciéndole por su feedback.

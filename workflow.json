@@ -1,0 +1,336 @@
+{
+  "name": "Entrega_Final",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sos un clasificador de sentimiento de reseñas de productos.\n\nTu tarea es analizar la reseña y devolver ÚNICAMENTE un JSON válido.\n\nFormato de salida EXACTO:\n{\"sentiment\":\"POSITIVO\"}\n\nOpciones válidas para \"sentiment\":\n- POSITIVO\n- NEGATIVO\n- NEUTRAL\n\nReglas:\n- No agregues explicaciones\n- No agregues texto adicional\n- No agregues saltos de línea fuera del JSON\n- Si hay duda, usar NEUTRAL\n\nReseña:\n\n {{ $json.body.message }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        -640,
+        144
+      ],
+      "id": "e8fc175d-747e-426e-a694-8dcc9343613f",
+      "name": "Clasificación reseña"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        288
+      ],
+      "id": "38e91ac1-d198-4813-b5cb-f6243d4561b6",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "rlU5A1n38W5P0oTp",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2a7a77fe-9279-4288-a32c-f532f78b1be2",
+              "name": "tipo_reseña",
+              "value": "={{ JSON.parse($json[\"text\"]).sentiment }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -320,
+        144
+      ],
+      "id": "b0cfbc31-c829-4e11-b466-b7772206850e",
+      "name": "Parse info"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "af5c9faa-1f95-41e8-b2f7-8556993d6852",
+              "leftValue": "={{ $json['tipo_reseña'] }}",
+              "rightValue": "NEGATIVO",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -128,
+        144
+      ],
+      "id": "4fb940d1-f56c-4f11-a8cf-5e8d136c0046",
+      "name": "Condicional"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sos un analista de reseñas negativas.\n\nAnalizá la siguiente reseña y devolvé ÚNICAMENTE un JSON válido.\n\nFormato EXACTO:\n{\n  \"summary\": \"Resumen breve en una oración\",\n  \"reasons\": [\"motivo 1\", \"motivo 2\"]\n}\n\nReglas:\n- Máximo 2 motivos\n- No agregar texto fuera del JSON\n- Los motivos deben ser concretos\n\nReseña:\n{{ $('Recepción dato').item.json.body.message }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        48,
+        32
+      ],
+      "id": "69b672b4-3cd6-43b8-aef6-5e8e3a9e184f",
+      "name": "Reseña negativa"
+    },
+    {
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        160,
+        208
+      ],
+      "id": "52e5701a-bf8d-4998-8a9f-637a71197dec",
+      "name": "Groq Chat Model1",
+      "credentials": {
+        "groqApi": {
+          "id": "rlU5A1n38W5P0oTp",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "929625fb-2d5b-44ca-a8fc-987bd62564fd",
+              "name": "resumen",
+              "value": "={{ JSON.parse($json[\"text\"]).summary }}",
+              "type": "string"
+            },
+            {
+              "id": "4069d759-ebb6-41a4-9b5c-56b9142cc234",
+              "name": "razones",
+              "value": "={{ JSON.parse($json[\"text\"]).reasons[0] }}, {{ JSON.parse($json[\"text\"]).reasons[1] }},{{ JSON.parse($json[\"text\"]).reasons[2] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        32
+      ],
+      "id": "1ee54eb5-fa59-4f33-bee7-379da016a17c",
+      "name": "Parse info res. neg."
+    },
+    {
+      "parameters": {
+        "sendTo": "alvarez.emilianofortin@gmail.com",
+        "subject": "Aviso - Reseña negativa detectada",
+        "message": "=<div style=\"font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;\">\n  <div style=\"max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);\">\n    \n    <!-- Header -->\n    <div style=\"background-color: #d32f2f; color: white; padding: 16px 24px;\">\n      <h2 style=\"margin: 0;\">🚨 Reseña Negativa Detectada</h2>\n    </div>\n\n    <!-- Body -->\n    <div style=\"padding: 24px; color: #333;\">\n      \n      <p style=\"font-size: 15px;\">\n        Se ha detectado una nueva reseña negativa proveniente del siguiente usuario:\n      </p>\n\n      <!-- Usuario -->\n      <div style=\"background-color: #f9fafb; padding: 16px; border-radius: 6px; margin-bottom: 20px;\">\n        <p style=\"margin: 4px 0;\"><strong>👤 Nombre:</strong> {{ $('Recepción dato').item.json.body.customer }}</p>\n        <p style=\"margin: 4px 0;\"><strong>📧 Correo:</strong> {{ $('Recepción dato').item.json.body.customer_email }}</p>\n      </div>\n\n      <!-- Resumen -->\n      <div style=\"margin-bottom: 20px;\">\n        <h3 style=\"margin-bottom: 8px;\">📝 Resumen de la reseña</h3>\n        <div style=\"background-color: #f4f6f8; padding: 12px; border-left: 4px solid #d32f2f; border-radius: 4px;\">\n          <em>\"{{ $json.resumen }}\"</em>\n        </div>\n      </div>\n\n      <!-- Razones -->\n      <div style=\"margin-bottom: 20px;\">\n        <h3 style=\"margin-bottom: 8px;\">⚠️ Motivos detectados</h3>\n        <div style=\"background-color: #fff4f4; padding: 12px; border-left: 4px solid #ff5252; border-radius: 4px;\">\n          {{ $json.razones }}\n        </div>\n      </div>\n\n      <!-- Footer mensaje -->\n      <div style=\"margin-top: 24px; padding: 16px; background-color: #e3f2fd; border-radius: 6px;\">\n        <p style=\"margin: 0; font-size: 14px;\">\n          📞 <strong>Acción requerida:</strong> Por favor, ponerse en contacto con el usuario a la brevedad para resolver el inconveniente.\n        </p>\n      </div>\n\n    </div>\n\n    <!-- Footer -->\n    <div style=\"background-color: #f4f6f8; text-align: center; padding: 12px; font-size: 12px; color: #777;\">\n      Sistema automático de monitoreo de reseñas\n    </div>\n\n  </div>\n</div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        32
+      ],
+      "id": "389f5045-8242-464a-a68e-6dac87086b7c",
+      "name": "Aviso a CX",
+      "webhookId": "c2ecb554-bbf8-49b3-9bfa-080df8dcd5e7",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ioCF5hTdC1IsxlBt",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Recepción dato').item.json.body.customer_email }}",
+        "subject": "Gracias por tu feedback",
+        "message": "=<div style=\"font-family: Arial, sans-serif; background-color: #f4f6f8; padding: 20px;\">   <div style=\"max-width: 600px; margin: auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08);\">          <!-- Header -->     <div style=\"background-color: #2e7d32; color: white; padding: 16px 24px;\">       <h2 style=\"margin: 0;\">💚 ¡Gracias por tu reseña!</h2>     </div>      <!-- Body -->     <div style=\"padding: 24px; color: #333;\">              <p style=\"font-size: 15px;\">         Hola <strong>{{ $('Recepción dato').item.json.body.customer }}</strong>,       </p>        <p style=\"font-size: 15px; line-height: 1.6;\">         Queremos agradecerte sinceramente por elegirnos y por tomarte el tiempo de compartir tu experiencia con nosotros. Tu opinión es muy valiosa y nos ayuda a seguir mejorando día a día.       </p>        <!-- Reseña -->       <div style=\"margin: 20px 0;\">         <h3 style=\"margin-bottom: 8px;\">📝 Tu reseña</h3>         <div style=\"background-color: #f1f8e9; padding: 12px; border-left: 4px solid #2e7d32; border-radius: 4px;\">           <em>\"{{ $('Recepción dato').item.json.body.message }}\"</em>         </div>       </div>        <p style=\"font-size: 15px; line-height: 1.6;\">         Nos alegra saber que tu experiencia fue positiva, y también tomamos muy en cuenta cualquier sugerencia que nos hayas brindado. Siempre estamos trabajando para ofrecerte un mejor servicio.       </p>        <p style=\"font-size: 15px; line-height: 1.6;\">         Si en algún momento tenés más comentarios o necesitás ayuda, no dudes en contactarnos. ¡Vamos a estar encantados de ayudarte!       </p>        <!-- Cierre -->       <div style=\"margin-top: 24px; padding: 16px; background-color: #e8f5e9; border-radius: 6px;\">         <p style=\"margin: 0; font-size: 14px;\">           🙌 Gracias nuevamente por confiar en nosotros.         </p>       </div>      </div>      <!-- Footer -->     <div style=\"background-color: #f4f6f8; text-align: center; padding: 12px; font-size: 12px; color: #777;\">       Equipo de Atención al Cliente     </div>    </div> </div>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        64,
+        368
+      ],
+      "id": "1b6161a8-c5d2-46ad-931b-f3971282667e",
+      "name": "Respuesta a cliente",
+      "webhookId": "0642e86b-634b-4876-b532-c4d4d8c9d68a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ioCF5hTdC1IsxlBt",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "Entrega-Final",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -848,
+        144
+      ],
+      "id": "e4697c66-565c-4df9-b102-2ec0c5855f6e",
+      "name": "Recepción dato",
+      "webhookId": "51b6008b-783c-4722-8192-2ca72f09d2fe"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clasificación reseña",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificación reseña": {
+      "main": [
+        [
+          {
+            "node": "Parse info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse info": {
+      "main": [
+        [
+          {
+            "node": "Condicional",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Condicional": {
+      "main": [
+        [
+          {
+            "node": "Reseña negativa",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respuesta a cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Reseña negativa",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reseña negativa": {
+      "main": [
+        [
+          {
+            "node": "Parse info res. neg.",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse info res. neg.": {
+      "main": [
+        [
+          {
+            "node": "Aviso a CX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recepción dato": {
+      "main": [
+        [
+          {
+            "node": "Clasificación reseña",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7f58ca60-3154-46bd-9af6-356f6d0a14ea",
+  "meta": {
+    "instanceId": "6cfbf0d3111b080c944739d3b46185ad66a1d3899159e1a32ddf30fa68fbe639"
+  },
+  "id": "uq246VVgdzsqn4U7",
+  "tags": []
+}
